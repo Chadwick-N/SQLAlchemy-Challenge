@@ -77,14 +77,14 @@ def tobs():
 @app.route("/api/v1.0/<start>")
 def start(start):
     session = Session(engine)
-    date_query = dt.date(2017,8,23) - dt.timedelta(days=365)
-    start_results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date >= date_query).all()
+    start_date = dt.date(2010,1,1)
+    start_results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date >= start_date).all()
     session.close
-    
+
     start_list = []
     for min, avg, max in start_results:
         start_dict = {}
-        start_dict["StartDate"] = date_query
+        start_dict["StartDate"] = start_date
         start_dict["Min"] = min
         start_dict["Avg"] = avg
         start_dict["Max"] = max
@@ -96,13 +96,14 @@ def start(start):
 def startend(start, end):
     session = Session(engine)
     
-    start_date = session.query(Measurement.date).order_by(Measurement.date).first()
-    end_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    start_date = dt.date(2010,1,1)
+    end_date = dt.date(2017,8,23)
     
     startend_results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
         filter(Measurement.date >= start_date).\
-            filter(Measurement <= end_date)
-            
+        filter(Measurement.date <= end_date).\
+        group_by(Measurement.date).all()
+        
     session.close()
     
     startend_list = []
@@ -113,6 +114,7 @@ def startend(start, end):
         startend_dict["Min"] = min
         startend_dict["Avg"] = avg
         startend_dict["Max"] = max
+        startend_list.append(startend_dict)
 
     return jsonify(startend_list)
 
