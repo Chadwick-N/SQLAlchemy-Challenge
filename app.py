@@ -60,8 +60,8 @@ def stations():
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    date_query = dt.date(2017,8,23) - dt.timedelta(days=365)
     session = Session(engine)
+    date_query = dt.date(2017,8,23) - dt.timedelta(days=365)
     tobs_results = session.query(Measurement.date, Measurement.tobs).filter(Measurement.date >= date_query).order_by(Measurement.date).all()
     session.close()
     
@@ -74,13 +74,30 @@ def tobs():
     
     return jsonify(tobs_list)
 
-@app.route("/api/v1.0/start")
-def start_day(start):
+@app.route("/api/v1.0/<start>")
+def start(start):
+    session = Session(engine)
+    date_query = dt.date(2017,8,23) - dt.timedelta(days=365)
+    start_results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date >= date_query).all()
+    session.close
+    
+    start_list = []
+    for min, avg, max in start_results:
+        start_dict = {}
+        start_dict["StartDate"] = date_query
+        start_dict["Min"] = min
+        start_dict["Avg"] = avg
+        start_dict["Max"] = max
+        start_list.append(start_dict)
+    
+    return jsonify(start_list)
 
-
-# @app.route("/api/v1.0/start/end)
-# def startend(start, end):
-
+@app.route("/api/v1.0/<start>/<end>)
+def startend(start, end):
+    session = Session(engine)
+    start_date = session.query(Measurement.date).order_by(Measurement.date).first()
+    end_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    session.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
