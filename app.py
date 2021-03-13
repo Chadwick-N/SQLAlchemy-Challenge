@@ -92,12 +92,30 @@ def start(start):
     
     return jsonify(start_list)
 
-@app.route("/api/v1.0/<start>/<end>)
+@app.route("/api/v1.0/<start>/<end>")
 def startend(start, end):
     session = Session(engine)
+    
     start_date = session.query(Measurement.date).order_by(Measurement.date).first()
     end_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    
+    startend_results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).\
+            filter(Measurement <= end_date)
+            
     session.close()
+    
+    startend_list = []
+    for min, avg, max in startend_results:
+        startend_dict = {}
+        startend_dict["StartDate"] = start_date
+        startend_dict["EndDate"] = end_date
+        startend_dict["Min"] = min
+        startend_dict["Avg"] = avg
+        startend_dict["Max"] = max
+
+    return jsonify(startend_list)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
